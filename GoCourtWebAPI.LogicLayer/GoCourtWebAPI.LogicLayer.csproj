@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="ModelController\NewFolder1\" />
     <Folder Include="ModelController\NewFolder\" />
   </ItemGroup>
 
