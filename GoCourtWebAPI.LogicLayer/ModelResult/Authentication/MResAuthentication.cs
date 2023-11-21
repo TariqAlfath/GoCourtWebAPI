@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GoCourtWebAPI.LogicLayer.ModelResult.Authentication
 {
-    public class MRAuthentication
+    public class MResAuthentication
     {
         public string Username { get; set; }
         public string Nama { get; set; }

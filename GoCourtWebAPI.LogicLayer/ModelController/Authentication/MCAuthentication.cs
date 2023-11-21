@@ -25,9 +25,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
         }
 
 
-        public ResultBase<MRAuthentication> Login(string username, string password)
+        public ResultBase<MResAuthentication> Login(string username, string password)
         {
-            var result = new ResultBase<MRAuthentication>();
+            var result = new ResultBase<MResAuthentication>();
             try
             {
                 var hashedPassword = AESEncryption.Encrypt(password);
@@ -42,7 +42,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                 }
                 #endregion
 
-                var peserta = validateUser.Select(x => new MRAuthentication
+                var peserta = validateUser.Select(x => new MResAuthentication
                 {
                     Nama = x.Nama,
                     Alamat = x.Alamat,
@@ -65,9 +65,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             return result;
         }
 
-        public async Task<ResultBase<MRAuthentication>> Register(MReqAuthentication req)
+        public async Task<ResultBase<MResAuthentication>> Register(MReqAuthentication req)
         {
-            var result = new ResultBase<MRAuthentication>();
+            var result = new ResultBase<MResAuthentication>();
             try
             {
                 if(db.TblUsers.Where(x=>x.Username == req.Username).Any())
@@ -101,9 +101,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             return result;
         }
 
-        public async Task<ResultBase<MRAuthentication>> ChangePersonalInfo(MReqAuthentication req,string oldPassword)
+        public async Task<ResultBase<MResAuthentication>> ChangePersonalInfo(MReqAuthentication req,string oldPassword)
         {
-            var result = new ResultBase<MRAuthentication>();
+            var result = new ResultBase<MResAuthentication>();
             try
             {
                 var user = db.TblUsers.Where(x=>x.Username == req.Username).FirstOrDefault();

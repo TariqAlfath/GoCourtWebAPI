@@ -16,4 +16,8 @@
     <ProjectReference Include="..\GoCourtWebAPI.DAL\GoCourtWebAPI.DAL.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ModelController\NewFolder\" />
+  </ItemGroup>
+
 </Project>
