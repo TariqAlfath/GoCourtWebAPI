@@ -16,8 +16,17 @@ public partial class TblTransaksi
     [Column("id_order")]
     public int? IdOrder { get; set; }
 
+    /// <summary>
+    /// Orang yang meng approve transaksi ini
+    /// </summary>
+    [Column("id_user")]
+    public Guid? IdUser { get; set; }
+
     [Column("harga_total", TypeName = "decimal(18, 0)")]
     public decimal? HargaTotal { get; set; }
+
+    [Column("catatan")]
+    public string? Catatan { get; set; }
 
     [Column("createdAt", TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }

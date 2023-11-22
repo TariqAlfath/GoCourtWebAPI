@@ -43,4 +43,7 @@ public partial class TblLapangan
     [ForeignKey("IdJenisLapangan")]
     [InverseProperty("TblLapangans")]
     public virtual TblJenisLapangan? IdJenisLapanganNavigation { get; set; }
+
+    [InverseProperty("IdLapanganNavigation")]
+    public virtual ICollection<TblOrder> TblOrders { get; set; } = new List<TblOrder>();
 }

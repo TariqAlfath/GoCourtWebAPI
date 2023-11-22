@@ -3,11 +3,7 @@ using GoCourtWebAPI.DAL.Models;
 using GoCourtWebAPI.LogicLayer.ModelRequest.Lapangan;
 using GoCourtWebAPI.LogicLayer.ModelResult.General;
 using GoCourtWebAPI.LogicLayer.ModelResult.Lapangan;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
 {
@@ -50,7 +46,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
             catch(Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
             return result;
         }
@@ -67,6 +63,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
                 {
                     result.ResultCode = "500";
                     result.ResultMessage = $"Nama Lapangan {request.NamaLapangan} With Jenis Lapangan ID {request.IdJenisLapangan} Already Exists !";
+                    return result;
+                }
+
+                if(!db.TblJenisLapangans.Where(x=>x.IdJenisLapangan == request.IdJenisLapangan).Any())
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = $"Cant Find Jenis Lapangan !";
                     return result;
                 }
 
@@ -88,7 +91,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
             catch (Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
             return result;
         }
@@ -107,6 +110,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
                 {
                     result.ResultCode = "404";
                     result.ResultMessage = "Can't Find Lapangan With ID :" + request.NamaLapangan;
+                    return result;
+                }
+
+                if (!db.TblJenisLapangans.Where(x => x.IdJenisLapangan == request.IdJenisLapangan).Any())
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = $"Cant Find Jenis Lapangan !";
                     return result;
                 }
 
@@ -132,8 +142,67 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
             catch (Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
+            return result;
+        }
+
+
+        public async Task<ResultBase<List<MResLapangan>>> GetAvailableCourtAsync(DateTime? startDate, DateTime? endDate, int? idJenisLapangan)
+        {
+            var result = new ResultBase<List<MResLapangan>>()
+            {
+                Data = new()
+            };
+            try
+            {
+
+
+                var listOrders = db.TblOrders.Where(x => x.Status == "Active" && x.PaymentProof != null).AsNoTracking();
+
+
+                if (startDate != null && endDate != null)
+                {
+                    listOrders = listOrders.Where(x => x.RentStart < endDate && startDate < x.RentEnd);
+                }
+
+                if (idJenisLapangan != null)
+                {
+                    listOrders = listOrders.Where(x => x.IdLapanganNavigation.IdJenisLapangan == idJenisLapangan);
+                }
+
+                var bookedCourt = listOrders.Select(x => x.IdLapangan).ToList();
+
+                var query = db.TblLapangans.AsNoTracking();
+                
+                if(bookedCourt.Any() )
+                {
+                    query = query.Where(x => !bookedCourt.Contains(x.IdLapangan));
+                }
+
+                if (!query.Any())
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "There's no Court Available";
+                    return result;
+                }
+
+                result.Data = query.Select(x=> new MResLapangan
+                {
+                    IdLapangan = x.IdLapangan,
+                    HargaLapangan = x.HargaLapangan,
+                    IdJenisLapangan = x.IdJenisLapangan,
+                    NamaJenisLapangan = x.IdJenisLapanganNavigation.NamaJenisLapangan,
+                    NamaLapangan = x.NamaLapangan
+                }).ToList();
+
+            }
+            catch (Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+
             return result;
         }
     }

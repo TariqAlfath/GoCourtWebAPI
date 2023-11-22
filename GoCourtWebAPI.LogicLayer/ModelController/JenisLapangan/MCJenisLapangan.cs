@@ -42,7 +42,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
             catch(Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
 
             return result;
@@ -78,7 +78,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
             catch(Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
 
             return result;
@@ -106,7 +106,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
             catch(Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
 
             return result;

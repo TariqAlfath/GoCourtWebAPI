@@ -37,5 +37,12 @@ namespace GoCourtWebAPI.Controllers.Lapangan
         {
             return (await mcLapangan.InsertLapangan(request)).GenerateActionResult();
         }
+
+        [HttpGet]
+        [Route("GetAvailableCourt")]
+        public async Task<IActionResult> InsertLapangan(DateTime? startDate, DateTime? endDate,int? idJenisLapangan)
+        {
+            return (await mcLapangan.GetAvailableCourtAsync(startDate,endDate,idJenisLapangan)).GenerateActionResult();
+        }
     }
 }

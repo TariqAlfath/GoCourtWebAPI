@@ -25,6 +25,9 @@ public partial class TblOrder
     [Column("rent_end", TypeName = "datetime")]
     public DateTime? RentEnd { get; set; }
 
+    [Column("estimatedPrice", TypeName = "decimal(18, 0)")]
+    public decimal? EstimatedPrice { get; set; }
+
     [Column("payment_proof")]
     public byte[]? PaymentProof { get; set; }
 
@@ -32,6 +35,9 @@ public partial class TblOrder
     [StringLength(50)]
     [Unicode(false)]
     public string? Status { get; set; }
+
+    [Column("catatan")]
+    public string? Catatan { get; set; }
 
     [Column("createdAt", TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }
@@ -48,6 +54,10 @@ public partial class TblOrder
     [StringLength(50)]
     [Unicode(false)]
     public string? ModifiedBy { get; set; }
+
+    [ForeignKey("IdLapangan")]
+    [InverseProperty("TblOrders")]
+    public virtual TblLapangan? IdLapanganNavigation { get; set; }
 
     [ForeignKey("IdUser")]
     [InverseProperty("TblOrders")]

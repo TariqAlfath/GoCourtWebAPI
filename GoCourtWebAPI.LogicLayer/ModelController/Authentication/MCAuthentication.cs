@@ -44,6 +44,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
 
                 var peserta = validateUser.Select(x => new MResAuthentication
                 {
+                    IdUser = x.IdUser,
                     Nama = x.Nama,
                     Alamat = x.Alamat,
                     Email = x.Email,
@@ -60,7 +61,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             catch (Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
             return result;
         }
@@ -96,7 +97,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             catch (Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
             return result;
         }
@@ -140,7 +141,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             catch (Exception ex)
             {
                 result.ResultCode = "500";
-                result.ResultMessage = ex.Message;
+                result.ResultMessage = ex.InnerException.Message;
             }
             return result;
         }
