@@ -12,9 +12,9 @@ namespace GoCourtWebAPI.Controllers.Authentication
     public class AuthenticationController : ControllerBase
     {
         MCAuthentication mcAuth;
-        public AuthenticationController(DBContext db)
+        public AuthenticationController(DBContext db,IConfiguration configuration)
         {
-            mcAuth = new MCAuthentication(db);
+            mcAuth = new MCAuthentication(db,configuration);
         }
         [HttpGet]
         [Route("Login")]

@@ -21,7 +21,14 @@ namespace GoCourtWebAPI.Controllers.Order
         [Route("GetListOrder")]
         public async Task<IActionResult> GetListOrder(DateTime? startDate,DateTime? endDate,int? idJenisLapangan)
         {
-            return (await mcOrder.GetOrderAsync(startDate,endDate,idJenisLapangan)).GenerateActionResult();
+            return (await mcOrder.GetListOrderAsync(startDate,endDate,idJenisLapangan)).GenerateActionResult();
+        }
+
+        [HttpGet]
+        [Route("GetOrder")]
+        public async Task<IActionResult> GetOrder(int idOrder)
+        {
+            return (await mcOrder.GetOrderAsync(idOrder)).GenerateActionResult();
         }
 
 

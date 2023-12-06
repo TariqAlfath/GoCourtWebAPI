@@ -14,6 +14,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelResult.Order
         public decimal? EstimatedPrice { get; set; }
         public string? Renter { get; set; }
         public string? Catatan { get; set; }
+        public bool? IsBuy { get; set; } = false;
         public Guid? IdUser { get; set; }
         public DateTime? CreatedAt { get; set; }
     }

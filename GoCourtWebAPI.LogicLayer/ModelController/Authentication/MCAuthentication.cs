@@ -4,9 +4,13 @@ using GoCourtWebAPI.LogicLayer.ModelController.Helper;
 using GoCourtWebAPI.LogicLayer.ModelRequest.Authentication;
 using GoCourtWebAPI.LogicLayer.ModelResult.Authentication;
 using GoCourtWebAPI.LogicLayer.ModelResult.General;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -17,11 +21,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
     public class MCAuthentication
     {
         private readonly DBContext db;
+        private readonly string secretkey;
 
-        public MCAuthentication(DBContext db)
+        public MCAuthentication(DBContext db,IConfiguration configuration)
         {
             this.db = db;
             this.db = db;
+            this.secretkey = configuration["JWT:SecretKey"].ToString();
         }
 
 
@@ -42,7 +48,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                 }
                 #endregion
 
-                var peserta = validateUser.Select(x => new MResAuthentication
+                var peserta = validateUser.Select(x => new MResUser
                 {
                     IdUser = x.IdUser,
                     Nama = x.Nama,
@@ -54,7 +60,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                 }).FirstOrDefault();
 
 
-                result.Data = peserta;
+                result.Data = new MResAuthentication
+                {
+                    Token = GenerateToken(peserta),
+                    User = peserta,
+                    validateToken = DateTime.UtcNow.AddHours(9)
+                    
+                };
                 
 
             }
@@ -144,6 +156,32 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                 result.ResultMessage = ex.InnerException.Message;
             }
             return result;
+        }
+
+        public string GenerateToken(MResUser user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            
+
+            var key = Encoding.ASCII.GetBytes(secretkey);
+            var claimsIdentity = new ClaimsIdentity(new[] {
+                new Claim("Username", user.Username),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.Nama),
+            });
+
+            //claimsIdentity.AddClaims(claims);
+            var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = claimsIdentity,
+                Expires = DateTime.UtcNow.AddHours(9),
+                SigningCredentials = signingCredentials
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
     

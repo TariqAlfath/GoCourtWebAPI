@@ -8,6 +8,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelResult.Authentication
 {
     public class MResAuthentication
     {
+        public MResUser User { get; set; }
+        public string Token { get; set; }
+        public DateTime validateToken { get; set; }
+    }
+
+    public class MResUser
+    {
         public Guid IdUser { get; set; }
         public string Username { get; set; }
         public string Nama { get; set; }

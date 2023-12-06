@@ -18,10 +18,49 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
         }
 
 
-        public async Task<ResultBase<List<MResOrder>>> GetOrderAsync(DateTime? startDate, DateTime? endDate,int? idJenisLapangan)
+        public async Task<ResultBase<MResOrder>> GetOrderAsync(int idOrder)
+        {
+            var result = new ResultBase<MResOrder>();
+            try
+            {
+
+
+                var x = db.TblOrders.Where(x=>x.IdOrder == idOrder).FirstOrDefault();
+
+                
+
+                if (x == null)
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "There's no Court Available";
+                    return result;
+                }
+
+                result.Data = new MResOrder()
+                {
+                    IdOrder = x.IdOrder,
+                    CreatedAt = x.CreatedAt,
+                    IdUser = x.IdUser,
+                    RentStart = x.RentStart,
+                    RentEnd = x.RentEnd,
+                    Renter = x.IdUserNavigation.Nama,
+                    EstimatedPrice = x.EstimatedPrice,
+                    Catatan = x.Catatan
+                };                
+
+            }
+            catch(Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+
+            return result;
+        }
+
+        public async Task<ResultBase<List<MResOrder>>> GetListOrderAsync(DateTime? startDate, DateTime? endDate,int? idJenisLapangan)
         {
             var result = new ResultBase<List<MResOrder>>();
-            //bool getAll = false;
             try
             {
 
@@ -32,6 +71,10 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                 {
                     query = query.Where(x => x.RentStart < endDate && startDate < x.RentEnd);
                 }
+                else
+                {
+                    query = query.Where(x => DateTime.Now < x.RentEnd);
+                }
 
                 if(idJenisLapangan != null)
                 {
@@ -41,7 +84,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                 if (!query.Any())
                 {
                     result.ResultCode = "404";
-                    result.ResultMessage = "There's no Court Available";
+                    result.ResultMessage = "There's no Order Available";
                     return result;
                 }
 
@@ -54,7 +97,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     RentEnd = x.RentEnd,
                     Renter = x.IdUserNavigation.Nama,
                     EstimatedPrice = x.EstimatedPrice,
-                    Catatan = x.Catatan
+                    Catatan = x.Catatan,
+                    IsBuy = x.PaymentProof != null ? true : false
                 }).ToList();                
 
             }
@@ -231,7 +275,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                 {
                     _ = listRejectOrder.Select(x =>
                     {
-                        x.Status = "Rejected";
+                        x.Status = "Rejected By Another Order";
                         return x;
                     });
                 }
@@ -266,6 +310,43 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
             return result;
 
 
+        }
+
+        public async Task<ResultBase<bool>> CancelApprovedOrder(int idOrder)
+        {
+            var result = new ResultBase<bool>()
+            {
+                Data = false,
+            };
+            try
+            {
+                var order = db.TblOrders.Where(x => x.IdOrder == idOrder).FirstOrDefault();
+                if(order == null)
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "Cant Find An Order !";
+                    return result;
+                }
+
+                var listOverlappingOrder = db.TblOrders.Where(x => x.Status == "Rejected By Another Order" && x.IdLapangan != order.IdLapangan).Where(x => x.RentStart < order.RentEnd && order.RentStart < x.RentEnd).AsNoTracking();
+                
+                if(listOverlappingOrder.Any())
+                {
+                    listOverlappingOrder.ToList().ForEach(x =>
+                    {
+                        x.Status = "Active";
+                    });
+                }
+
+                result.Data = true;
+            }
+            catch (Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+
+            return result;
         }
 
         public async Task<ResultBase<decimal>> EstimatedPrice (DateTime startDate,DateTime endDate,int idLapangan)
