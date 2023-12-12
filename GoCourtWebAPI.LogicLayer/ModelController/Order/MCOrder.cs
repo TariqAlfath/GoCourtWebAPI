@@ -1,20 +1,27 @@
 ﻿using GoCourtWebAPI.DAL.DBContext;
 using GoCourtWebAPI.DAL.Models;
+using GoCourtWebAPI.LogicLayer.DI;
+using GoCourtWebAPI.LogicLayer.Extension;
+using GoCourtWebAPI.LogicLayer.ModelRequest.Helper;
 using GoCourtWebAPI.LogicLayer.ModelRequest.MReqOrder;
 using GoCourtWebAPI.LogicLayer.ModelResult.General;
 using GoCourtWebAPI.LogicLayer.ModelResult.Order;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Ocsp;
 
 namespace GoCourtWebAPI.LogicLayer.ModelController.Order
 {
     public class MCOrder
     {
         private readonly DBContext db;
+        private readonly UserData user;
 
-        public MCOrder(DBContext db)
+        public MCOrder(DBContext db, UserData user)
         {
             this.db = db;
+            this.user = user;
         }
 
 
@@ -58,13 +65,101 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
             return result;
         }
 
-        public async Task<ResultBase<List<MResOrder>>> GetListOrderAsync(DateTime? startDate, DateTime? endDate,int? idJenisLapangan)
+        public async Task<ResultBasePaginated<List<MResActiveOrder>>> GetCurrentOrder(DataSourceRequest request)
         {
-            var result = new ResultBase<List<MResOrder>>();
+            var result = new ResultBasePaginated<List<MResActiveOrder>>();
             try
             {
+                var query = db.TblOrders.Where(x => x.RentEnd > DateTime.Now && x.IdUser == user.user.IdUser && x.Status == "Active").Include(x=>x.IdUserNavigation).Include(x=>x.IdLapanganNavigation).AsNoTracking();
+
+                if (!request.searchVal.IsNullOrEmpty() && !request.searchType.IsNullOrEmpty())
+                {
+                    query = query.WhereByDynamic(request.searchType, request.searchVal, request.method);
+                }
+
+                var total = query.Count();
+
+                query = query.Skip((request.page - 1) * request.size).Take(request.size);
 
 
+                result.Pagination = new ResultBasePaginated<List<MResActiveOrder>>.Paginated()
+                {
+                    Page = request.page,
+                    Size = request.size,
+                    Total = total,
+                    TotalPage = (int)Math.Ceiling((double)total / request.size)
+                };
+
+
+
+                result.Data = query.ToList().Select(x=> new MResActiveOrder
+                {
+                    IdOrder = x.IdOrder,
+                    IdLapangan = x.IdLapangan,
+                    NamaLapangan = x.IdLapanganNavigation?.NamaLapangan,
+                    CreatedAt = x.CreatedAt,
+                    IdUser = x.IdUser,
+                    RentStart = x.RentStart,
+                    RentEnd = x.RentEnd,
+                    Renter = x.IdUserNavigation?.Nama,
+                    EstimatedPrice = x.EstimatedPrice,
+                    Catatan = x.Catatan,
+                    IsBuy = x.PaymentProof != null ? true : false,
+                    OtherOrder = GetListOrderAsync(null, x.RentStart, x.RentEnd, x.IdLapangan).Result.Data?.Where(y => y.IdOrder != x.IdOrder).Count()
+                }).ToList();
+
+                result.ResultCountData = query.Count();
+
+
+            }catch(Exception ex)
+            {
+
+            }
+            return result;
+        }
+        public async Task<ResultBase<List<MResActiveOrder>>> GetActiveOrderAsync()
+        {
+            var result = new ResultBase<List<MResActiveOrder>>();
+            try
+            {
+                var query = db.TblOrders.Where(x=>x.IdUser == user.user.IdUser && x.Status == "Active").ToList();                
+
+                if (query.Any())
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "There's no Court Available";
+                    return result;
+                }
+
+                result.Data = query.Select( x =>new MResActiveOrder()
+                {
+                    IdOrder = x.IdOrder,
+                    CreatedAt = x.CreatedAt,
+                    IdUser = x.IdUser,
+                    RentStart = x.RentStart,
+                    RentEnd = x.RentEnd,
+                    Renter = x.IdUserNavigation.Nama,
+                    EstimatedPrice = x.EstimatedPrice,
+                    Catatan = x.Catatan,
+                    IsBuy = x.PaymentProof != null ? true : false,
+                    OtherOrder = GetListOrderAsync(null,x.RentStart,x.RentEnd,x.IdLapangan).Result.Data?.Where(y=>y.IdOrder != x.IdOrder).Count()
+                }).ToList();                
+
+            }
+            catch(Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+
+            return result;
+        }
+
+        public async Task<ResultBase<List<MResOrder>>> GetListOrderAsync(DataSourceRequest? req,DateTime? startDate, DateTime? endDate,int? idJenisLapangan)
+        {
+            var result = new ResultBasePaginated<List<MResOrder>>();
+            try
+            {
                 var query = db.TblOrders.AsNoTracking();
 
                 if (startDate != null && endDate != null)
@@ -78,14 +173,28 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
 
                 if(idJenisLapangan != null)
                 {
-                    query = query.Where(x => x.IdLapanganNavigation.IdJenisLapangan == idJenisLapangan);
+                    query = query.Where(x => x.IdLapanganNavigation.IdLapangan == idJenisLapangan);
                 }
 
-                if (!query.Any())
+                var total = query.Count();
+                if (req != null)
                 {
-                    result.ResultCode = "404";
-                    result.ResultMessage = "There's no Order Available";
-                    return result;
+                    result.Pagination = new ResultBasePaginated<List<MResOrder>>.Paginated()
+                    {
+                        Page = req.page,
+                        Size = req.size,
+                        Total = total,
+                        TotalPage = (int)Math.Ceiling((double)total / req.size)
+                    };
+
+                    query = query.Skip((req.page - 1) * req.size).Take(req.size);
+
+                    if (!query.Any())
+                    {
+                        result.ResultCode = "404";
+                        result.ResultMessage = "There's no Order Available";
+                        return result;
+                    }
                 }
 
                 result.Data = query.Select(x=> new MResOrder
@@ -99,8 +208,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     EstimatedPrice = x.EstimatedPrice,
                     Catatan = x.Catatan,
                     IsBuy = x.PaymentProof != null ? true : false
-                }).ToList();                
-
+                }).ToList();   
             }
             catch(Exception ex)
             {
@@ -135,6 +243,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                 {
                     await pop.CopyToAsync(memoryStream);
                     order.PaymentProof = memoryStream.ToArray();
+                    order.PayemntProofFileType = pop.ContentType;
+                    order.PayemntProofFileName = pop.FileName;
                 }
 
                 db.SaveChanges();
@@ -159,8 +269,10 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
 
             try
             {
+                var date1 = request.RentStart.ConvertToDateTime();
+                var date2 = request.RentEnd.ConvertToDateTime();
                 #region Validation Area
-                var listOrders = db.TblOrders.Where(x => x.Status == "Active" && x.PaymentProof != null).Where(x => x.RentStart < request.RentEnd && request.RentStart < x.RentEnd).AsNoTracking();
+                var listOrders = db.TblOrders.Where(x => x.Status == "Active" && (x.IdUser == user.user.IdUser || x.PaymentProof != null)).Where(x => x.RentStart <  date2 && date1 < x.RentEnd).AsNoTracking();
 
                 var bookedCourt = listOrders.Select(x => x.IdLapangan).ToList();
 
@@ -186,8 +298,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     return result;
                 }
 
-                var user = db.TblUsers.Where(x => x.IdUser == request.IdUser).ToList();
-                if (!user.Any())
+                var users = db.TblUsers.Where(x => x.IdUser == user.user.IdUser).ToList();
+                if (!users.Any())
                 {
                     result.ResultCode = "404";
                     result.ResultMessage = "Cant Find ID Peserta !";
@@ -197,18 +309,18 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                 #endregion
 
 
-                var totalHour = request.RentEnd - request.RentStart;
+                var totalHour = date2 - date1;
                 decimal? totalHarga = ((int)Math.Ceiling(totalHour.TotalHours) * daftarLapangan.Select(x=>x.HargaLapangan).FirstOrDefault()) ?? 0;
 
 
                 var data = new TblOrder()
                 {
-                    RentStart = request.RentStart,
-                    RentEnd = request.RentEnd,
+                    RentStart = date1,
+                    RentEnd = date2,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "System",
                     IdLapangan = request.IdLapangan,
-                    IdUser = request.IdUser,
+                    IdUser = user.user.IdUser,
                     Status = "Active",
                     EstimatedPrice = totalHarga,
                     Catatan = request.Catatan
@@ -225,9 +337,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     IdOrder = data.IdOrder,
                     CreatedAt = DateTime.Now,
                     IdUser = data.IdUser,
-                    Renter = user.FirstOrDefault().Nama,
-                    RentEnd = request.RentEnd,
-                    RentStart = request.RentStart,
+                    Renter = user.user.Nama,
+                    RentEnd = date2,
+                    RentStart = date1,
                     EstimatedPrice = totalHarga,
                     Catatan = request.Catatan
                 };
@@ -243,9 +355,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
             return result;
         }
 
-        public async Task<ResultBase<TblTransaksi>> ApprovePayment(MReqApprovePayment request)
+        public async Task<ResultBase<bool>> ApprovePayment(MReqApprovePayment request)
         {
-            var result = new ResultBase<TblTransaksi>()
+            var result = new ResultBase<bool>()
             {
                 Data = new()
             };
@@ -260,16 +372,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     return result;
                 }
 
-                var user = db.TblUsers.Where(x => x.IdUser == request.IdUser).FirstOrDefault();
-                if(user == null)
-                {
-                    result.ResultCode = "404";
-                    result.ResultMessage = "Cant Find An User !";
-                    return result;
-                }
 
                 #region Reject Another Order
-                var listRejectOrder = db.TblOrders.Where(x=>x.IdLapangan == order.IdLapangan && x.IdOrder != order.IdOrder).ToList();
+                var listRejectOrder = db.TblOrders.Where(x=>x.IdLapangan == order.IdLapangan && x.IdOrder != order.IdOrder).Where(x => x.RentStart < order.RentEnd && order.RentStart < x.RentEnd).ToList();
 
                 if(listRejectOrder.Any())
                 {
@@ -277,7 +382,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     {
                         x.Status = "Rejected By Another Order";
                         return x;
-                    });
+                    }).ToList();
                 }
                 order.Status = "Approved";
 
@@ -289,8 +394,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                 {
                     IdOrder = order.IdOrder,
                     CreatedAt = DateTime.Now,
-                    HargaTotal = request.TotalHarga,
-                    IdUser = user.IdUser,
+                    HargaTotal = order.EstimatedPrice,
+                    IdUser = order.IdUser,
                     Catatan = request.Catatan
                 };
 
@@ -298,7 +403,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
 
                 await db.SaveChangesAsync();
 
-                result.Data = transactionData;
+                result.Data = true;
 
             }
             catch (Exception ex)
@@ -349,6 +454,42 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
             return result;
         }
 
+        public async Task<ResultBase<MResFilePOP>> DownloadPOP(int idOrder)
+        {
+            var result = new ResultBase<MResFilePOP>();
+
+            try
+            {
+                var order = db.TblOrders.Where(x => x.IdOrder == idOrder && x.PaymentProof != null).FirstOrDefault();
+                if(order == null)
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "Cant Find Any Order";
+                    return result;
+                }
+
+                var file = order.PaymentProof;
+                var fileName = order.PayemntProofFileName;
+                var fileType = order.PayemntProofFileType;
+
+                result.Data = new MResFilePOP()
+                {
+                    idOrder = idOrder,
+                    file = file,
+                    fileName = fileName,
+                    fileType = fileType
+                };
+
+
+            }catch(Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+
+            return result;
+        }
+
         public async Task<ResultBase<decimal>> EstimatedPrice (DateTime startDate,DateTime endDate,int idLapangan)
         {
             var result = new ResultBase<decimal>
@@ -358,10 +499,10 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
 
             try
             {
-                var totalHour = startDate - endDate;
+                var totalHour = endDate - startDate;
                 decimal totalHarga = ((int)Math.Ceiling(totalHour.TotalHours) * db.TblLapangans.Where(x=>x.IdLapangan == idLapangan).Select(x=>x.HargaLapangan).FirstOrDefault()) ?? 0;
                 
-                result.Data = totalHarga;
+                result.Data = totalHarga < 0 ? 0 : totalHarga;
                 
             }
             catch (Exception ex)
@@ -373,16 +514,25 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
             return result;
         }
 
-        public async Task<ResultBase<bool>> RejectOrder(int idOrder,string catatan)
+        public async Task<ResultBase<bool>> RejectOrder(MReqRejectPayment request)
         {
             var result = new ResultBase<bool>()
             {
                 Data = false
             };
 
+            var AllowedStatus = new string[] { "Rejected", "Canceled" };
+
             try
             {
-                var order = db.TblOrders.Where(x=>x.IdOrder ==  idOrder).FirstOrDefault();
+                if(!AllowedStatus.Contains(request.Status))
+                {
+                    result.ResultCode = "400";
+                    result.ResultMessage = "Status Not Allowed !";
+                    return result;
+                }
+
+                var order = db.TblOrders.Where(x=>x.IdOrder ==  request.IdOrder).FirstOrDefault();
                 if(order == null)
                 {
                     result.ResultCode = "404";
@@ -390,10 +540,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     return result;
                 }
 
-                order.Status = "Rejected";
+                order.Status = request.Status;
                 order.Catatan = $"{order.Catatan}" +
                     $"" +
-                    $"Admin : {catatan}";
+                    $"Admin : {request.Catatan}";
+
+                db.TblOrders.Update(order);
+                db.SaveChanges();
 
             }
             catch (Exception ex)

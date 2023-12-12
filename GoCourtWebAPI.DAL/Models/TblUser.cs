@@ -47,6 +47,9 @@ public partial class TblUser
     [Unicode(false)]
     public string? Role { get; set; }
 
+    [Column("status")]
+    public bool? Status { get; set; }
+
     [Column("createdAt", TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }
 

@@ -18,6 +18,9 @@ public partial class TblJenisLapangan
     [Unicode(false)]
     public string? NamaJenisLapangan { get; set; }
 
+    [Column("status")]
+    public bool? Status { get; set; }
+
     [Column("createdAt", TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }
 

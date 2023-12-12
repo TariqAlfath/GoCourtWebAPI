@@ -13,9 +13,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelRequest.MReqOrder
 
     public class MReqInsertOrder
     {
-        public DateTime RentStart { get; set; }
-        public DateTime RentEnd { get; set; }
-        public Guid IdUser { get; set; }
+        public string RentStart { get; set; }
+        public string RentEnd { get; set; }
+        //public Guid IdUser { get; set; }
         public int IdLapangan { get; set; }
         public string Catatan { get; set; }
     }
@@ -23,8 +23,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelRequest.MReqOrder
     public class MReqApprovePayment
     {
         public int IdOrder { get; set;}
-        public Guid IdUser { get; set;}
-        public decimal TotalHarga { get; set; }
+        public string Catatan { get; set; }
+    }
+
+    public class MReqRejectPayment
+    {
+        public int IdOrder { get; set;}
+        public string Status { get; set; }
         public string Catatan { get; set; }
     }
 }

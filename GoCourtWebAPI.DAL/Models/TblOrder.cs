@@ -31,6 +31,16 @@ public partial class TblOrder
     [Column("payment_proof")]
     public byte[]? PaymentProof { get; set; }
 
+    [Column("payemnt_proof_file_name")]
+    [StringLength(255)]
+    [Unicode(false)]
+    public string? PayemntProofFileName { get; set; }
+
+    [Column("payemnt_proof_file_type")]
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? PayemntProofFileType { get; set; }
+
     [Column("status")]
     [StringLength(50)]
     [Unicode(false)]

@@ -24,6 +24,9 @@ public partial class TblLapangan
     [Column("harga_lapangan", TypeName = "decimal(18, 0)")]
     public decimal? HargaLapangan { get; set; }
 
+    [Column("status")]
+    public bool? Status { get; set; }
+
     [Column("createdAt", TypeName = "datetime")]
     public DateTime? CreatedAt { get; set; }
 

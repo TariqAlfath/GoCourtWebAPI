@@ -11,9 +11,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelRequest.Authentication
     {
         [Required (ErrorMessage ="Username Must Filled")]
         public string Username { get; set; }
-        [Required(ErrorMessage = "Password Must Filled")]
+        //[Required(ErrorMessage = "Password Must Filled")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).{10,}$", ErrorMessage = "Password must have at least 10 characters, with symbols, and at least one capital character.")]
-        public string Password { get; set; }
+        public string? Password { get; set; }
         [Required(ErrorMessage = "Nama Must Filled")]
         public string Nama { get; set; }
         [Required(ErrorMessage = "Alamat Must Filled")]
@@ -24,5 +24,17 @@ namespace GoCourtWebAPI.LogicLayer.ModelRequest.Authentication
         public string Email { get; set; }
         [Required(ErrorMessage = "Role Must Filled")]
         public string Role { get; set; }
+    }
+
+    public class MReqUpdateFlagPeserta
+    {
+        public Guid IdPeserta { get; set; }
+        public bool Status { get; set;}
+    }
+
+    public class MReqUpdateRolePeserta
+    {
+        public Guid IdPeserta { get; set; }
+        public string Role { get; set;}
     }
 }

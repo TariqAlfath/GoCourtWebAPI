@@ -11,4 +11,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelRequest.JenisLapangan
         public int IdJenisLapangan { get; set; }
         public string NamaJenisLapangan { get; set; }
     }
+    public class MReqUpdateStatusJenisLapangan
+    {
+        public int IdJenisLapangan { get; set; }
+        public bool Status{ get; set; }
+    }
 }

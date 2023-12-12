@@ -1,9 +1,14 @@
 ﻿using GoCourtWebAPI.DAL.DBContext;
 using GoCourtWebAPI.DAL.Models;
+using GoCourtWebAPI.LogicLayer.DI;
+using GoCourtWebAPI.LogicLayer.Extension;
 using GoCourtWebAPI.LogicLayer.ModelController.Helper;
 using GoCourtWebAPI.LogicLayer.ModelRequest.Authentication;
+using GoCourtWebAPI.LogicLayer.ModelRequest.Helper;
 using GoCourtWebAPI.LogicLayer.ModelResult.Authentication;
 using GoCourtWebAPI.LogicLayer.ModelResult.General;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -21,11 +26,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
     public class MCAuthentication
     {
         private readonly DBContext db;
+        private readonly IHttpContextAccessor contextAccessor;
         private readonly string secretkey;
 
-        public MCAuthentication(DBContext db,IConfiguration configuration)
+        public MCAuthentication(DBContext db,IConfiguration configuration, IHttpContextAccessor contextAccessor)
         {
             this.db = db;
+            this.contextAccessor = contextAccessor;
             this.db = db;
             this.secretkey = configuration["JWT:SecretKey"].ToString();
         }
@@ -43,7 +50,15 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                 if (!validateUser.Any())
                 {
                     result.ResultCode = "404";
-                    result.ResultMessage = "Can't Find Any Users !";
+                    result.ResultMessage = "Username Or Password Incorrect !";
+                    return result;
+                }
+
+                validateUser = validateUser.Where(x => (x.Role == "Admin" || x.Role == "Customer") && x.Status == true).ToList();
+                if (!validateUser.Any())
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "Your Account Has Been Disabled !";
                     return result;
                 }
                 #endregion
@@ -78,9 +93,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             return result;
         }
 
-        public async Task<ResultBase<MResAuthentication>> Register(MReqAuthentication req)
+        public async Task<ResultBase<bool>> Register(MReqAuthentication req)
         {
-            var result = new ResultBase<MResAuthentication>();
+            var result = new ResultBase<bool>();
             try
             {
                 if(db.TblUsers.Where(x=>x.Username == req.Username).Any())
@@ -97,14 +112,16 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                 tblUser.Email = req.Email;
                 tblUser.Username = req.Username;
                 tblUser.Role = req.Role;
-                tblUser.Password = AESEncryption.Encrypt(req.Password);
+                tblUser.Password = AESEncryption.Encrypt(req.Password ?? "GoCourt123@@");
                 tblUser.NomorTelefon = req.NomorTelefon;
                 tblUser.CreatedAt = DateTime.Now;
-                tblUser.CreatedBy = "System";
+                tblUser.CreatedBy = new UserData(contextAccessor).user.Username;
+                tblUser.Status = true;
 
                 db.TblUsers.Add(tblUser);
                 await db.SaveChangesAsync();
-                
+
+                result.Data = true;
             }
             catch (Exception ex)
             {
@@ -169,6 +186,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.Nama),
+                new Claim("IdUser",user.IdUser.ToString())
             });
 
             //claimsIdentity.AddClaims(claims);
@@ -182,6 +200,105 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        public async Task<ResultBasePaginated<List<MResUser>>> GetListUsers(DataSourceRequest req)
+        {
+            var result = new ResultBasePaginated<List<MResUser>>();
+            try
+            {
+                var query = db.TblUsers.AsNoTracking();
+
+                if(!req.searchVal.IsNullOrEmpty() && !req.searchType.IsNullOrEmpty())
+                {
+                    query = query.WhereByDynamic(req.searchType, req.searchVal, req.method);
+                }
+                
+                var total = query.Count();
+
+                query = query.Skip((req.page - 1) * req.size).Take(req.size);
+
+                result.Pagination = new ResultBasePaginated<List<MResUser>>.Paginated()
+                {
+                    Page = req.page,
+                    Size = req.size,
+                    Total = total,
+                    TotalPage = (int)Math.Ceiling((double)total / req.size)
+                };
+
+                result.Data = query.Select(x=> new MResUser
+                {
+                    Alamat = x.Alamat,
+                    Email = x.Email,
+                    IdUser = x.IdUser,
+                    Nama = x.Nama,
+                    NomorTelefon = x.NomorTelefon,
+                    Role = x.Role,
+                    Username = x.Username,
+                    Status = x.Status
+                }).ToList();
+
+            }catch(Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+
+            return result;
+        }
+
+        public async Task<ResultBase<bool>> UpdateFlagPeserta(MReqUpdateFlagPeserta request)
+        {
+            var result = new ResultBase<bool>();
+            try
+            {
+                var peserta = db.TblUsers.Where(x => x.IdUser == request.IdPeserta).FirstOrDefault();
+                if(peserta == null)
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "Can't Find Any Peserta";
+                    return result;
+                }
+
+                peserta.Status = request.Status;
+
+                db.TblUsers.Update(peserta);
+                db.SaveChanges();
+
+
+            }catch(Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+            return result;
+        }
+
+        public async Task<ResultBase<bool>> UpdateRolePeserta(MReqUpdateRolePeserta request)
+        {
+            var result = new ResultBase<bool>();
+            try
+            {
+                var peserta = db.TblUsers.Where(x => x.IdUser == request.IdPeserta).FirstOrDefault();
+                if(peserta == null)
+                {
+                    result.ResultCode = "404";
+                    result.ResultMessage = "Can't Find Any Peserta";
+                    return result;
+                }
+
+                peserta.Role = request.Role;
+
+                db.TblUsers.Update(peserta);
+                db.SaveChanges();
+
+
+            }catch(Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+            return result;
         }
     }
     

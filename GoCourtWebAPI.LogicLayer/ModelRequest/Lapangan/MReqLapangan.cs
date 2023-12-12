@@ -24,4 +24,10 @@ namespace GoCourtWebAPI.LogicLayer.ModelRequest.Lapangan
         public string NamaLapangan { get; set; }
         public decimal HargaLapangan { get; set; }
     }
+
+    public class MReqUpdateStatusLapangan
+    {
+        public int IdLapangan { get; set; }
+        public bool Status { get; set; }
+    }
 }
