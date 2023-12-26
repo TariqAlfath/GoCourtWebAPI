@@ -15,6 +15,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelResult.Order
         public string? Renter { get; set; }
         public string? Catatan { get; set; }
         public bool? IsBuy { get; set; } = false;
+        public string? Status { get; set; }
         public Guid? IdUser { get; set; }
         public DateTime? CreatedAt { get; set; }
     }

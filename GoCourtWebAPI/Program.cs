@@ -29,7 +29,7 @@ builder.Services.AddDbContext<DBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 //DI Identity
-builder.Services.AddSingleton<UserData>();
+builder.Services.AddScoped<UserData>();
 //builder.Services.AddScoped<AuthenticationMiddleWare>();
 
 builder.Services.AddAuthentication(x =>

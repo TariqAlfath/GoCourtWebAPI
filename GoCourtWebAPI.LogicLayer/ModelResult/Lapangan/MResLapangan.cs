@@ -13,6 +13,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelResult.Lapangan
         public int? IdJenisLapangan { get; set; }
         public string? NamaJenisLapangan { get; set; }
         public decimal? HargaLapangan { get; set; }
+        public bool? Status { get; set; }
 
     }
 }

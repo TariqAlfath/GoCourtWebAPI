@@ -52,7 +52,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     RentEnd = x.RentEnd,
                     Renter = x.IdUserNavigation.Nama,
                     EstimatedPrice = x.EstimatedPrice,
-                    Catatan = x.Catatan
+                    Catatan = x.Catatan,
+                    Status = x.Status
                 };                
 
             }
@@ -160,7 +161,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
             var result = new ResultBasePaginated<List<MResOrder>>();
             try
             {
-                var query = db.TblOrders.AsNoTracking();
+                var query = db.TblOrders.Where(x=>x.Status  == "Active").AsNoTracking();
 
                 if (startDate != null && endDate != null)
                 {
@@ -173,7 +174,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
 
                 if(idJenisLapangan != null)
                 {
-                    query = query.Where(x => x.IdLapanganNavigation.IdLapangan == idJenisLapangan);
+                    query = query.Where(x => x.IdLapangan == idJenisLapangan);
                 }
 
                 var total = query.Count();
@@ -207,7 +208,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     Renter = x.IdUserNavigation.Nama,
                     EstimatedPrice = x.EstimatedPrice,
                     Catatan = x.Catatan,
-                    IsBuy = x.PaymentProof != null ? true : false
+                    IsBuy = x.PaymentProof != null ? true : false,
+                    Status = x.Status
                 }).ToList();   
             }
             catch(Exception ex)
@@ -238,6 +240,18 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     result.ResultMessage = "File type not allowed !";
                     return result;
                 }
+
+                var listOtherOrder = await GetListOrderAsync(null,order.RentStart,order.RentEnd,order.IdLapangan);
+                if(listOtherOrder.Data.Where(x=>x.IsBuy == true).Any())
+                {
+                    if (!validateFileType(pop))
+                    {
+                        result.ResultCode = "500";
+                        result.ResultMessage = "Unable to make payment due to pending approval for another order.";
+                        return result;
+                    }
+                }
+
                 // Convert the IFormFile to a byte array
                 using (var memoryStream = new MemoryStream())
                 {
@@ -538,6 +552,24 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
                     result.ResultCode = "404";
                     result.ResultMessage = "Can't Find an Order !";
                     return result;
+                }
+
+                if(order.Status == "Approved")
+                {
+                    var listOtherOrder = (await GetListOrderAsync(null, order.RentStart, order.RentEnd, order.IdLapangan)).Data.Where(x=>x.Status == "Rejected By Another Order");
+                    if (listOtherOrder.Any())
+                    {
+                        listOtherOrder.ToList().ForEach(x =>
+                        {
+                            var data = db.TblOrders.Where(y => x.IdOrder == y.IdOrder).FirstOrDefault();
+                            if (data != null)
+                            {
+                                data.Status = "Active";
+                                db.TblOrders.Update(data);
+                            }
+                        });
+                    }
+                    
                 }
 
                 order.Status = request.Status;

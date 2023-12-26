@@ -30,6 +30,7 @@ namespace GoCourtWebAPI.Controllers.JenisLapangan
         
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         [Route("GetJenisLapanganPagination")]
         public async Task<IActionResult> GetJenisLapanganPagination([FromQuery]DataSourceRequest request)
         {

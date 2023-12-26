@@ -37,7 +37,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
                     HargaLapangan = x.HargaLapangan,
                     IdJenisLapangan = x.IdJenisLapangan,
                     NamaJenisLapangan = x.IdJenisLapanganNavigation.NamaJenisLapangan,
-                    NamaLapangan = x.NamaLapangan
+                    NamaLapangan = x.NamaLapangan,
+                    Status = x.Status
                 }).ToList();
 
                 if (!data.Any())
@@ -91,7 +92,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
                     HargaLapangan = x.HargaLapangan,
                     IdJenisLapangan = x.IdJenisLapangan,
                     NamaJenisLapangan = x.IdJenisLapanganNavigation.NamaJenisLapangan,
-                    NamaLapangan = x.NamaLapangan
+                    NamaLapangan = x.NamaLapangan,
+                    Status = x.Status
                 }).ToList();
 
                 if (!data.Any())
@@ -139,7 +141,8 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
                     CreatedBy = userData.user.Username,
                     HargaLapangan = request.HargaLapangan,
                     IdJenisLapangan = request.IdJenisLapangan,
-                    NamaLapangan = request.NamaLapangan
+                    NamaLapangan = request.NamaLapangan,
+                    Status = true
                 };
 
                 db.TblLapangans.Add(data);
@@ -259,13 +262,6 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
 
                 var listOrders = db.TblOrders.Where(x => x.Status == "Active" && (x.IdUser == userData.user.IdUser ||  x.PaymentProof != null) || x.Status == "Approved").AsNoTracking();
 
-                //var test = listOrders.Where(x => x.RentStart < endDate);
-                //test = test.Where(x => startDate < x.RentEnd);
-
-                //// Log the generated SQL query
-                //var sql = test.ToQueryString();
-                //Console.WriteLine(sql);
-
                 if (startDate != null && endDate != null)
                 {
                     listOrders = listOrders.Where(x => x.RentStart < endDate && startDate < x.RentEnd);
@@ -278,8 +274,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Lapangan
 
                 var bookedCourt = listOrders.Select(x => x.IdLapangan).ToList();
 
-                var query = db.TblLapangans.AsNoTracking();
+                var query = db.TblLapangans.Where(x=>x.Status == true).AsNoTracking();
                 
+                if(idJenisLapangan!= null)
+                {
+                    query = query.Where(x => x.IdJenisLapangan == idJenisLapangan);
+                }
+
                 if(bookedCourt.Any() )
                 {
                     query = query.Where(x => !bookedCourt.Contains(x.IdLapangan));

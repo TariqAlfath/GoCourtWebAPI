@@ -47,6 +47,13 @@ namespace GoCourtWebAPI.Controllers.Authentication
         }
 
         [HttpPost]
+        [Route("RegisterUserPublic")]
+        public async Task<IActionResult> RegisterUserPublic (MReqAuthenticationPublic request)
+        {
+            return (await mcAuth.RegisterUserPublic(request)).GenerateActionResult();
+        }
+
+        [HttpPost]
         [Route("ChangePersonalInfo")]
         public async Task<IActionResult> ChangePersonalInfo(MReqAuthentication request,string oldPassword)
         {

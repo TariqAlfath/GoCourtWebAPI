@@ -131,6 +131,44 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             return result;
         }
 
+        public async Task<ResultBase<bool>> RegisterUserPublic(MReqAuthenticationPublic req)
+        {
+            var result = new ResultBase<bool>();
+            try
+            {
+                if(db.TblUsers.Where(x=>x.Username == req.Username).Any())
+                {
+                    result.ResultCode = "500";
+                    result.ResultMessage = "Username Already Taken";
+                    return result;
+                }
+
+                TblUser tblUser = new();
+
+                tblUser.Nama = req.Nama;
+                tblUser.Alamat = req.Alamat;
+                tblUser.Email = req.Email;
+                tblUser.Username = req.Username;
+                tblUser.Role = "Customer";
+                tblUser.Password = AESEncryption.Encrypt(req.Password ?? "GoCourt123@@");
+                tblUser.NomorTelefon = req.NomorTelefon;
+                tblUser.CreatedAt = DateTime.Now;
+                tblUser.CreatedBy = req.Username;
+                tblUser.Status = true;
+
+                db.TblUsers.Add(tblUser);
+                await db.SaveChangesAsync();
+
+                result.Data = true;
+            }
+            catch (Exception ex)
+            {
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+            return result;
+        }
+
         public async Task<ResultBase<MResAuthentication>> ChangePersonalInfo(MReqAuthentication req,string oldPassword)
         {
             var result = new ResultBase<MResAuthentication>();

@@ -27,9 +27,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
             this.db = db;
             this.user = user;
         }
-        public async Task<ResultBase<List<TblJenisLapangan>>> GetJenisLapangan()
+        public async Task<ResultBase<List<MResJenisLapangan>>> GetJenisLapangan()
         {
-            var result = new ResultBase<List<TblJenisLapangan>>()
+            var result = new ResultBase<List<MResJenisLapangan>>()
             {
                 Data = new()
             };
@@ -44,7 +44,12 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
                     return result;
                 }
 
-                result.Data = data;
+                result.Data = data.Select(x=>new MResJenisLapangan
+                {
+                    Status = x.Status,
+                    IdJenisLapangan = x.IdJenisLapangan,
+                    NamaJenisLapangan = x.NamaJenisLapangan
+                }).ToList();
 
             }
             catch(Exception ex)
@@ -55,9 +60,9 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
 
             return result;
         }
-        public async Task<ResultBasePaginated<List<TblJenisLapangan>>> GetJenisLapanganPagination(DataSourceRequest req)
+        public async Task<ResultBasePaginated<List<MResJenisLapangan>>> GetJenisLapanganPagination(DataSourceRequest req)
         {
-            var result = new ResultBasePaginated<List<TblJenisLapangan>>()
+            var result = new ResultBasePaginated<List<MResJenisLapangan>>()
             {
                 Data = new()
             };
@@ -72,7 +77,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
                 var total = query.Count();
                 query = query.Skip((req.page - 1) * req.size).Take(req.size);
 
-                result.Pagination = new ResultBasePaginated<List<TblJenisLapangan>>.Paginated()
+                result.Pagination = new ResultBasePaginated<List<MResJenisLapangan>>.Paginated()
                 {
                     Page = req.page,
                     Size = req.size,
@@ -80,10 +85,11 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
                     TotalPage = (int)Math.Ceiling((double)total / req.size)
                 };
 
-                result.Data = query.Select(x => new TblJenisLapangan
+                result.Data = query.Select(x => new MResJenisLapangan
                 {
                     IdJenisLapangan = x.IdJenisLapangan,
                     NamaJenisLapangan = x.NamaJenisLapangan,
+                    Status = x.Status,
                 }).ToList();
 
 
@@ -157,7 +163,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
 
 
                 
-                db.TblJenisLapangans.Add(data);
+                db.TblJenisLapangans.Update(data);
                 await db.SaveChangesAsync();
                 result.Data = true;
             }

@@ -29,6 +29,7 @@ namespace GoCourtWebAPI.Controllers.Lapangan
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         [Route("GetLapanganPagination")]
         public async Task<IActionResult> GetLapanganPagination([FromQuery]DataSourceRequest request)
         {
