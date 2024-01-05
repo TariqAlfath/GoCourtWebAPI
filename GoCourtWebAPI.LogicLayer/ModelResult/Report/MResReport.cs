@@ -29,13 +29,20 @@ namespace GoCourtWebAPI.LogicLayer.ModelResult.Report
 
     public class MResGetRevenueEachMonth
     {
-        public string Bulan { get; set; }
         public string Tahun { get; set; }
-        public decimal Revenue { get; set;}
+
+        public List<DataRevenue> data { get; set; }
+
+        public class DataRevenue
+        {
+            public string Label { get; set; }
+            public decimal DataKey{ get; set; }
+        }
     }
 
     public class MResGetGrouppedStatus
     {
+        
         public int RejectedCount { get; set;}
         public int AcceptedCount { get; set;}
         public int PendingCount { get; set;}

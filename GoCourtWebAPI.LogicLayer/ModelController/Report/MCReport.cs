@@ -86,7 +86,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Report
             return result;
         }
 
-        public async Task<ResultBasePaginated<List<MResMostOrderedCourt>>> GetMostOrderedCourtAsync(DataSourceRequest req,DateTime stDate, DateTime enDate)
+        public async Task<ResultBasePaginated<List<MResMostOrderedCourt>>> GetMostOrderedCourtAsync(DataSourceRequest req)
         {
             var result = new ResultBasePaginated<List<MResMostOrderedCourt>>
             {
@@ -95,31 +95,38 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Report
 
             try
             {
-                var query = db.TblOrders.Where(x => x.CreatedAt >= stDate &&  enDate >= x.CreatedAt ).Include(x=>x.IdLapanganNavigation);
-
-
-                var total = query.Count();
+                var query = db.TblOrders.Where(x => x.CreatedAt.Value.Year == DateTime.Now.Year).Include(x=>x.IdLapanganNavigation);
 
                 if (req != null)
                 {
+
+
+
+                    int urutan = 1;
+                    var data = query
+                        .ToList()
+                        .GroupBy(x => new { x.IdLapangan, x.IdLapanganNavigation.NamaLapangan })
+                        .Select((x, index) => {
+                            var result = new MResMostOrderedCourt
+                            {
+                                Number = urutan,
+                                IdCourt = x.Key.IdLapangan,
+                                NamaLapangan = x.Key.NamaLapangan,
+                                Total = x.Count()
+                            };
+                            urutan++;   
+                            return result;
+                        })
+                        .OrderByDescending(x=>x.Total)
+                        .ToList();
+
                     result.Pagination = new ResultBasePaginated<List<MResMostOrderedCourt>>.Paginated()
                     {
                         Page = req.page,
                         Size = req.size,
-                        Total = total,
-                        TotalPage = (int)Math.Ceiling((double)total / req.size)
+                        Total = data.Count,
+                        TotalPage = (int)Math.Ceiling((double)data.Count / req.size)
                     };
-
-
-
-                    var data = query.GroupBy(x=>new { x.IdLapangan,x.IdLapanganNavigation.NamaLapangan }).OrderByDescending(x=>x.Count()).Select((x,Index) => new MResMostOrderedCourt
-                    {
-                       Number = Index,
-                       IdCourt = x.Key.IdLapangan,
-                       NamaLapangan = x.Key.NamaLapangan,
-                       Total = x.Count()
-                       
-                    }).ToList();
 
 
                     data = data.Skip((req.page - 1) * req.size).Take(req.size).ToList();
@@ -147,30 +154,34 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Report
             return result;
         }
 
-        public async Task<ResultBase<List<MResGetRevenueEachMonth>>> GetRevenueEachMonthAsync(DateTime stDate, DateTime enDate)
+        public async Task<ResultBase<MResGetRevenueEachMonth>> GetRevenueEachMonthAsync(DateTime stDate, DateTime enDate)
         {
-            var result = new ResultBasePaginated<List<MResGetRevenueEachMonth>>
+            var result = new ResultBasePaginated<MResGetRevenueEachMonth>
             {
-                Data = new List<MResGetRevenueEachMonth>()
+                Data = new MResGetRevenueEachMonth()
             };
 
             try
             {
                 var query = db.TblTransaksis.Where(x => x.CreatedAt >= stDate && enDate >= x.CreatedAt);
 
-
-                var total = query.Count();
-
-                var data = query.GroupBy(x => new { x.CreatedAt.Value.Month,x.CreatedAt.Value.Year }).OrderByDescending(x => x.Count()).Select((x, Index) => new MResGetRevenueEachMonth
+                var data = query.GroupBy(x => new { x.CreatedAt.Value.Month,x.CreatedAt.Value.Year }).OrderByDescending(x => x.Count()).Select((x) => new MResGetRevenueEachMonth
                 {
-                    Bulan = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(x.Key.Month),
-                    Revenue = x.Sum(x=>x.HargaTotal ?? 0) ,
-                    Tahun = x.Key.Year.ToString()
-                }).ToList();
+                    
+                    Tahun = x.Key.Year.ToString(),
+                    data =  new List<MResGetRevenueEachMonth.DataRevenue>()
+                    {
+                        new MResGetRevenueEachMonth.DataRevenue()
+                        {
+                            Label =CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(x.Key.Month),
+                            DataKey = x.Sum(x=>x.HargaTotal ?? 0),
+                        }
+                    }
+                }).FirstOrDefault();
 
                 result.Data = data;
 
-                if (!data.Any())
+                if (data == null)
                 {
                     result.ResultCode = "404";
                     result.ResultMessage = "There's no Order Available";
@@ -199,7 +210,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Report
 
                 result.Data = new MResGetGrouppedStatus
                 {
-                    AcceptedCount = data.Where(x => x.Status.ToLower().Contains("accepted")).Count(),
+                    AcceptedCount = data.Where(x => x.Status.ToLower().Contains("approved")).Count(),
                     PendingCount = data.Where(x => x.Status.ToLower().Contains("active")).Count(),
                     RejectedCount = data.Where(x => x.Status.ToLower().Contains("rejected")).Count(),
                 };

@@ -32,9 +32,9 @@ namespace GoCourtWebAPI.Controllers.Report
 
         [HttpGet]
         [Route("GetMostOrderedCourt")]
-        public async Task<IActionResult> GetMostOrderCourtAsync([FromQuery]DataSourceRequest req,DateTime stDate, DateTime enDate)
+        public async Task<IActionResult> GetMostOrderCourtAsync([FromQuery]DataSourceRequest req)
         {
-            return (await mcReport.GetMostOrderedCourtAsync(req,stDate,enDate)).GenerateActionResult();
+            return (await mcReport.GetMostOrderedCourtAsync(req)).GenerateActionResult();
         }
 
         [HttpGet]
