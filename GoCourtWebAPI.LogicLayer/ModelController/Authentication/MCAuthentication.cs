@@ -103,7 +103,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
                     result.ResultCode = "500";
                     result.ResultMessage = "Username Already Taken";
                     return result;
-                }
+                } 
 
                 TblUser tblUser = new();
 
