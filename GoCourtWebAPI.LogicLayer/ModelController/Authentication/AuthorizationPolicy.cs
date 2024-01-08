@@ -13,10 +13,10 @@ namespace GoCourtWebAPI.LogicLayer.DI
             {
                 IdUser = new Guid(httpContextAccessor.HttpContext.User.FindFirst("IdUser") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("IdUser").Value),
                 Alamat = httpContextAccessor.HttpContext.User.FindFirst("Alamat") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("Alamat").Value,
-                Email = httpContextAccessor.HttpContext.User.FindFirst("email") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("email").Value,
-                Nama = httpContextAccessor.HttpContext.User.FindFirst("unique_name") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("unique_name").Value,
+                Email = httpContextAccessor.HttpContext.User.FindFirst("emailaddress") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("emailaddress").Value,
+                Nama = httpContextAccessor.HttpContext.User.FindFirst("name") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("name").Value,
                 //NomorTelefon = httpContextAccessor.HttpContext.User.FindFirst("NomorTelefon") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("NomorTelefon").Value,
-                Role = httpContextAccessor.HttpContext.User.FindFirst("role") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("role").Value,
+                Role = httpContextAccessor.HttpContext.User.FindFirst("userrole") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("userrole").Value,
                 Username = httpContextAccessor.HttpContext.User.FindFirst("Username") == null ? null : httpContextAccessor.HttpContext.User.FindFirst("Username").Value
             };
         }

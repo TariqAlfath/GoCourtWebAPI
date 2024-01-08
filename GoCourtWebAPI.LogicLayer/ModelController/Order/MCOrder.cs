@@ -70,7 +70,12 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Order
             var result = new ResultBasePaginated<List<MResActiveOrder>>();
             try
             {
-                var query = db.TblOrders.Where(x => x.RentEnd > DateTime.Now && x.IdUser == user.user.IdUser && x.Status == "Active").Include(x=>x.IdUserNavigation).Include(x=>x.IdLapanganNavigation).AsNoTracking();
+                var query = db.TblOrders.Where(x => x.RentEnd > DateTime.Now && x.Status == "Active").Include(x=>x.IdUserNavigation).Include(x=>x.IdLapanganNavigation).AsNoTracking();
+
+                if(user.user.Role != "Admin")
+                {
+                    query = query.Where(x => x.IdUser == user.user.IdUser);
+                }
 
                 if (!request.searchVal.IsNullOrEmpty() && !request.searchType.IsNullOrEmpty())
                 {

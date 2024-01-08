@@ -221,13 +221,13 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Authentication
             var key = Encoding.ASCII.GetBytes(secretkey);
             var claimsIdentity = new ClaimsIdentity(new[] {
                 new Claim("Username", user.Username),
-                new Claim(ClaimTypes.Role, user.Role),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.Nama),
+                new Claim("role", user.Role),
+                new Claim("userrole", user.Role),
+                new Claim("emailaddress", user.Email),
+                new Claim("name", user.Nama),
                 new Claim("IdUser",user.IdUser.ToString())
             });
 
-            //claimsIdentity.AddClaims(claims);
             var signingCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature);
             var tokenDescriptor = new SecurityTokenDescriptor
             {

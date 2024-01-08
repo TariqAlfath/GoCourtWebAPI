@@ -39,9 +39,9 @@ namespace GoCourtWebAPI.Controllers.Report
 
         [HttpGet]
         [Route("GetRevenueEachMonth")]
-        public async Task<IActionResult> GetRevenueEachMonthAsync(DateTime stDate, DateTime enDate)
+        public async Task<IActionResult> GetRevenueEachMonthAsync(DateTime year)
         {
-            return (await mcReport.GetRevenueEachMonthAsync(stDate,enDate)).GenerateActionResult();
+            return (await mcReport.GetRevenueEachMonthAsync(year)).GenerateActionResult();
         }
 
         [HttpGet]

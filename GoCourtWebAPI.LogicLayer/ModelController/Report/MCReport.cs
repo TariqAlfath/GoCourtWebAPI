@@ -154,7 +154,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Report
             return result;
         }
 
-        public async Task<ResultBase<MResGetRevenueEachMonth>> GetRevenueEachMonthAsync(DateTime stDate, DateTime enDate)
+        public async Task<ResultBase<MResGetRevenueEachMonth>> GetRevenueEachMonthAsync(DateTime year)
         {
             var result = new ResultBasePaginated<MResGetRevenueEachMonth>
             {
@@ -163,7 +163,7 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.Report
 
             try
             {
-                var query = db.TblTransaksis.Where(x => x.CreatedAt >= stDate && enDate >= x.CreatedAt);
+                var query = db.TblTransaksis.Where(x => x.CreatedAt.Value.Year == year.Year);
 
                 var data = query.GroupBy(x => new { x.CreatedAt.Value.Month,x.CreatedAt.Value.Year }).OrderByDescending(x => x.Count()).Select((x) => new MResGetRevenueEachMonth
                 {
