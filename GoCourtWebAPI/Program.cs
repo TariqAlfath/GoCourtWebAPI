@@ -16,7 +16,7 @@ builder.Services.AddControllers();
 // Allowed Any Domain to use this API
 builder.Services.AddCors(options => options.AddDefaultPolicy(
         corsPolicyBuilder => corsPolicyBuilder
-            .WithOrigins("http://localhost:3000")
+            .WithOrigins("http://159.65.4.99:8082")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
@@ -90,11 +90,12 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseCors();
+
 app.UseAuthenticationMiddleware();
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
-app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -2,7 +2,6 @@
 using GoCourtWebAPI.LogicLayer.ModelController.Authentication;
 using GoCourtWebAPI.LogicLayer.ModelRequest.Authentication;
 using GoCourtWebAPI.LogicLayer.ModelRequest.Helper;
-using GoCourtWebAPI.LogicLayer.ModelResult.Authentication;
 using GoCourtWebAPI.LogicLayer.ModelResult.General;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

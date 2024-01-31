@@ -60,5 +60,13 @@ namespace GoCourtWebAPI.Controllers.JenisLapangan
         {
             return (await mcJenisLapangan.DisableJenisLapanganAsync(req)).GenerateActionResult();
         }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("TestBeginTran")]
+        public async Task<IActionResult> TestBeginTran()
+        {
+            return (await mcJenisLapangan.TestBeginTran()).GenerateActionResult();
+        }
     }
 }

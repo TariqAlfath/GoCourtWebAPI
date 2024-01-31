@@ -12,6 +12,7 @@ using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -208,6 +209,38 @@ namespace GoCourtWebAPI.LogicLayer.ModelController.JenisLapangan
             }
 
             return result;
+        }
+
+        public async Task<ResultBase<bool>> TestBeginTran()
+        {
+            var result = new ResultBase<bool>();
+            try
+            {
+                var transaction = db.Database.BeginTransaction();
+
+                db.TblJenisLapangans.Add(new TblJenisLapangan
+                {
+                    NamaJenisLapangan = "Test",
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "Test"
+                });
+
+                db.SaveChanges();
+
+                //transaction.Rollback();
+
+                //transaction.Commit();
+
+
+            }catch(Exception ex)
+            {
+                result.Data = false;
+                result.ResultCode = "500";
+                result.ResultMessage = ex.InnerException.Message;
+            }
+
+            return result;
+            
         }
     }
 }

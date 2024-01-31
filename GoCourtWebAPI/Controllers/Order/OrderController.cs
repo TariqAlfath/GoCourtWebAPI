@@ -1,6 +1,5 @@
 ﻿using GoCourtWebAPI.DAL.DBContext;
 using GoCourtWebAPI.LogicLayer.DI;
-using GoCourtWebAPI.LogicLayer.ModelController.Lapangan;
 using GoCourtWebAPI.LogicLayer.ModelController.Order;
 using GoCourtWebAPI.LogicLayer.ModelRequest.Helper;
 using GoCourtWebAPI.LogicLayer.ModelRequest.MReqOrder;
